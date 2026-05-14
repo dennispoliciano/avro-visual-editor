@@ -1,0 +1,56 @@
+/* Design tokens */
+:root {
+  /* ── Primária: Roxo ── */
+  --color-primary:         #5C2D91;
+  --color-primary-dark:    #3D1A6E;
+  --color-primary-light:   #EDE7F6;
+  --color-on-primary:      #FFFFFF;
+
+  /* ── Secundária: Laranja ── */
+  --color-secondary:       #F57C00;
+  --color-secondary-dark:  #E65100;
+  --color-on-secondary:    #FFFFFF;
+
+  /* ── Superfície ── */
+  --color-surface:         #FFFFFF;
+  --color-surface-alt:     #F5F5F5;
+  --color-border:          #E0E0E0;
+  --color-border-focus:    #5C2D91;
+  --color-on-surface:      #212121;
+  --color-on-surface-muted: #757575;
+
+  /* ── Feedback ── */
+  --color-error:           #D32F2F;
+  --color-error-light:     #FFEBEE;
+  --color-success:         #388E3C;
+  --color-success-light:   #E8F5E9;
+  --color-warning:         #F57C00;
+  --color-info:            #1565C0;
+
+  /* ── Espaçamento (base 4px) ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* ── Border radius ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* ── Tipografia ── */
+  --font-family: 'Montserrat', sans-serif;
+  --font-size-xs:  11px;
+  --font-size-sm:  13px;
+  --font-size-md:  15px;
+  --font-size-lg:  16px;
+
+  /* ── Sombras ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
