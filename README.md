@@ -10,6 +10,10 @@ A browser-based visual editor for building [Apache Avro](https://avro.apache.org
 
 Designed for teams working with **Kafka + Schema Registry**, it generates an avro schema from a single visual form, with real-time JSON preview and validation, making schema creation accessible to anyone on the team — no Avro expertise needed.
 
+## Demo
+
+https://avro-visual-editor.dennis-policiano.workers.dev/
+
 ---
 
 ## Features
