@@ -60,3 +60,8 @@ pnpm-debug.log*
 .tmp/
 *.tgz
 .playwright-mcp/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
