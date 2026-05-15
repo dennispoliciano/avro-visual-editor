@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { useEditorStore } from '../store/editorStore';
-import type { AvroTypeNode, RecordTypeNode, FieldPath } from '../types/avro';
+import { defaultTypeNode, hasSubNodes } from '../types/avro';
+import type { AvroFieldNode, AvroTypeNode, FieldPath, RecordTypeNode, SelectableType } from '../types/avro';
+import { DefaultInput } from './DefaultInput';
 import { FieldList } from './FieldList';
+import { TypeEditor } from './TypeEditor';
 
 interface RecordTypeEditorProps {
   type: RecordTypeNode;
@@ -47,6 +51,7 @@ export function RecordTypeEditor({ type, fieldPath, onTypeChange }: RecordTypeEd
             value={type.name}
             onChange={(e) => handleNameChange(e.target.value)}
             data-testid={`record-name-${fieldPath.join('-')}`}
+            maxLength={128}
           />
         </div>
         <div className="flex flex-col gap-0.5 flex-1">
@@ -57,6 +62,7 @@ export function RecordTypeEditor({ type, fieldPath, onTypeChange }: RecordTypeEd
             value={type.logicalName ?? ''}
             onChange={(e) => handleLogicalNameChange(e.target.value)}
             data-testid={`record-logical-name-${fieldPath.join('-')}`}
+            maxLength={128}
           />
         </div>
       </div>
@@ -95,7 +101,7 @@ function FieldListInline({
 
   function addField() {
     const newField = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       name: '',
       required: true,
       type: { kind: 'primitive' as const, type: 'string' as const },
@@ -146,13 +152,6 @@ function FieldListInline({
     />
   );
 }
-
-import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { defaultTypeNode, hasSubNodes } from '../types/avro';
-import type { AvroFieldNode, SelectableType } from '../types/avro';
-import { DefaultInput } from './DefaultInput';
-import { TypeEditor } from './TypeEditor';
 
 const TYPE_OPTIONS: SelectableType[] = [
   'string', 'int', 'long', 'float', 'double', 'boolean',
@@ -265,6 +264,7 @@ function InlineFieldEditor({
               value={field.name}
               onChange={(e) => onUpdate({ name: e.target.value })}
               onBlur={() => setNameTouched(true)}
+              maxLength={128}
             />
             {nameTouched && !field.name && (
               <span className="text-error" style={{ position: 'absolute', top: '100%', left: 0, whiteSpace: 'nowrap', zIndex: 10, background: 'var(--color-surface)', padding: '1px 4px', borderRadius: 3, pointerEvents: 'none' }}>
@@ -311,6 +311,7 @@ function InlineFieldEditor({
             placeholder="description"
             value={field.doc ?? ''}
             onChange={(e) => onUpdate({ doc: e.target.value })}
+            maxLength={1024}
           />
         </div>
 

@@ -81,6 +81,7 @@ export function EnumTypeEditor({ type, fieldPath, onTypeChange }: EnumTypeEditor
             value={type.name}
             onChange={(e) => handleNameChange(e.target.value)}
             data-testid={`enum-name-${fieldPath.join('-')}`}
+            maxLength={128}
           />
         </div>
         <div className="flex flex-col gap-0.5 flex-1">
@@ -91,6 +92,7 @@ export function EnumTypeEditor({ type, fieldPath, onTypeChange }: EnumTypeEditor
             value={type.logicalName ?? ''}
             onChange={(e) => handleLogicalNameChange(e.target.value)}
             data-testid={`enum-logical-name-${fieldPath.join('-')}`}
+            maxLength={128}
           />
         </div>
       </div>
@@ -106,6 +108,7 @@ export function EnumTypeEditor({ type, fieldPath, onTypeChange }: EnumTypeEditor
               value={sym}
               onChange={(e) => handleSymbolChange(i, e.target.value)}
               data-testid={`enum-symbol-${fieldPath.join('-')}-${i}`}
+              maxLength={128}
             />
             <button
               className="btn-icon-sm danger"

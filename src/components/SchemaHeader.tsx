@@ -60,6 +60,7 @@ export function SchemaHeader() {
               onChange={(e) => updateRoot({ name: e.target.value })}
               onBlur={() => setRootNameTouched()}
               data-testid="schema-name-input"
+              maxLength={256}
             />
             {nameError && (
               <span
@@ -115,6 +116,7 @@ export function SchemaHeader() {
             value={root.namespace ?? ''}
             onChange={(e) => updateRoot({ namespace: e.target.value })}
             data-testid="schema-namespace-input"
+            maxLength={256}
           />
         </div>
 
@@ -145,6 +147,7 @@ export function SchemaHeader() {
               updateRoot({ connectName: e.target.value });
             }}
             data-testid="schema-connect-name-input"
+            maxLength={256}
           />
         </div>
       </div>
@@ -159,6 +162,7 @@ export function SchemaHeader() {
           value={root.doc ?? ''}
           onChange={(e) => updateRoot({ doc: e.target.value })}
           data-testid="schema-doc-input"
+          maxLength={1024}
         />
       </div>
     </div>

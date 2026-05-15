@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { v4 as uuidv4 } from 'uuid';
 import type {
   AvroFieldNode,
   AvroTypeNode,
@@ -17,7 +16,7 @@ import { defaultTypeNode } from '../types/avro';
 
 function createDefaultField(): AvroFieldNode {
   return {
-    id: uuidv4(),
+    id: crypto.randomUUID(),
     name: '',
     required: true,
     type: { kind: 'primitive', type: 'string' },
@@ -135,6 +134,7 @@ export const useEditorStore = create<EditorStore>()(
 
     addField: () =>
       set((state) => {
+        if (state.fields.length >= 200) return;
         state.fields.push(createDefaultField());
       }),
 
@@ -185,6 +185,7 @@ export const useEditorStore = create<EditorStore>()(
           if (field.type.kind !== 'record') return;
           currentFields = field.type.fields;
         }
+        if (currentFields.length >= 200) return;
         currentFields.push(createDefaultField());
       }),
 

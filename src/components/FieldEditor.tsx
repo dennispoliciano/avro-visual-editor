@@ -131,6 +131,7 @@ export function FieldEditor({ field, path, isFirst, isLast }: FieldEditorProps) 
               onChange={(e) => handleNameChange(e.target.value)}
               onBlur={() => setNameTouched(true)}
               data-testid={`field-name-${field.id}`}
+              maxLength={128}
             />
             {nameError && (
               <span
@@ -224,6 +225,7 @@ export function FieldEditor({ field, path, isFirst, isLast }: FieldEditorProps) 
             value={field.doc ?? ''}
             onChange={(e) => handleDocChange(e.target.value)}
             data-testid={`field-doc-${field.id}`}
+            maxLength={1024}
           />
         </div>
 

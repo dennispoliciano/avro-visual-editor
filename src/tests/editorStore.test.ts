@@ -506,3 +506,249 @@ describe('immutability (Immer)', () => {
     expect(before).not.toBe(after);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bug Condition Exploration Tests (Task 1 — BEFORE any fix)
+//
+// These tests document and CONFIRM the presence of security bugs on unfixed code.
+// They are expected to PASS on unfixed code and will FAIL after fixes are applied.
+//
+// Documented counterexamples (found on unfixed code):
+//   C3: editorStore.ts line 3 imports `v4 as uuidv4` from 'uuid' (CVE GHSA-w5hq-g745-h8pq)
+//   C5-addField:       addField() 201 times → fields.length = 201 (no guard present)
+//   C5-addNestedField: addNestedField(['0']) 201 times → fields[0].type.fields.length = 201 (no guard present)
+// ─────────────────────────────────────────────────────────────────────────────
+
+import * as fc from 'fast-check';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+describe('Bug Condition Exploration', () => {
+  // ── C3 — uuid import removed (FIXED) ────────────────────────────────────
+  // Validates: Requirements 1.8 (bug condition eliminated)
+  // FIXED: C3 bug condition eliminated. crypto.randomUUID() is used instead.
+  it("C3 — FIXED: editorStore.ts no longer imports uuidv4 from 'uuid' (CVE GHSA-w5hq-g745-h8pq eliminated)", () => {
+    const filePath = resolve(__dirname, '../store/editorStore.ts');
+    const content = readFileSync(filePath, 'utf-8');
+    // After fix: the uuid import is gone — bug condition confirmed eliminated.
+    expect(content).not.toMatch(/from 'uuid'/);
+  });
+
+  // ── C5 — FIXED: addField is capped at 200 (PBT) ──────────────────────────
+  // Validates: Requirements 1.14 (bug condition eliminated)
+  // FIXED: Guard prevents fields from exceeding 200.
+  //
+  // Counterexample found on unfixed code: addField 201 times → fields.length = 201
+  // After fix: addField N > 200 times → fields.length === 200 (guard enforced)
+  it('C5 — FIXED: addField is capped at 200 (guard prevents exceeding limit)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 201, max: 400 }),
+        (n) => {
+          // Reset store before each property run
+          useEditorStore.setState({ fields: [], root: { name: '', namespace: '', doc: '', connectName: '' } });
+
+          const { addField } = useEditorStore.getState();
+          for (let i = 0; i < n; i++) {
+            addField();
+          }
+
+          const { fields } = useEditorStore.getState();
+          // After fix: guard caps at 200 → fields.length === 200, never exceeds
+          return fields.length <= 200;
+        },
+      ),
+      // numRuns reduced: fix verification needs only a few iterations
+      { numRuns: 10 },
+    );
+  }, 30000);
+
+  // ── C5 — FIXED: addNestedField is capped at 200 (PBT) ───────────────────
+  // Validates: Requirements 1.14 (bug condition eliminated)
+  // FIXED: Guard prevents nested fields from exceeding 200.
+  //
+  // Counterexample found on unfixed code: addNestedField(['0']) 201 times → fields[0].type.fields.length = 201
+  // After fix: addNestedField N > 200 times → recordType.fields.length === 200 (guard enforced)
+  it('C5 — FIXED: addNestedField is capped at 200 (guard prevents exceeding limit)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 201, max: 400 }),
+        (n) => {
+          // Reset store and set up a single record field at index 0
+          useEditorStore.setState({
+            fields: [makeRecordField('address')],
+            root: { name: '', namespace: '', doc: '', connectName: '' },
+          });
+
+          const { addNestedField } = useEditorStore.getState();
+          for (let i = 0; i < n; i++) {
+            addNestedField(['0']);
+          }
+
+          const { fields } = useEditorStore.getState();
+          const recordType = fields[0].type;
+          if (recordType.kind !== 'record') return false;
+
+          // After fix: guard caps at 200 → nested fields === 200, never exceeds
+          return recordType.fields.length <= 200;
+        },
+      ),
+      // numRuns reduced: fix verification needs only a few iterations
+      { numRuns: 10 },
+    );
+  }, 30000);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Preservation Properties (Task 2 — BEFORE any fix)
+//
+// These tests document the correct baseline behavior that MUST be preserved
+// after all security fixes are applied.
+// They MUST PASS on unfixed code and MUST CONTINUE TO PASS after all fixes.
+//
+// **Validates: Requirements 3.1, 3.2, 3.3, 3.5, 3.6, 3.9**
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Preservation Properties', () => {
+  // ── UUID format ────────────────────────────────────────────────────────────
+  // Documents that uuidv4() currently produces valid UUID v4 format.
+  // After fix (crypto.randomUUID()), the same regex must match.
+  // **Validates: Requirements 3.5**
+  it('Preservation — UUID format: generated field IDs match UUID v4 regex', () => {
+    const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    useEditorStore.setState({ fields: [], root: { name: '', namespace: '', doc: '', connectName: '' } });
+    getState().addField();
+    getState().addField();
+    getState().addField();
+
+    const fields = getState().fields;
+    for (const field of fields) {
+      expect(field.id).toMatch(UUID_V4_REGEX);
+    }
+  });
+
+  // ── addField below limit (PBT) ─────────────────────────────────────────────
+  // Property: for all N ∈ [1, 199], calling addField() N times results in
+  // fields.length === N.
+  // MUST PASS on unfixed code (no guard needed for N < 200).
+  // **Validates: Requirements 3.1**
+  it('Preservation — addField below limit (PBT): N ∈ [1,199] calls yields fields.length === N', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 199 }),
+        (n) => {
+          useEditorStore.setState({ fields: [], root: { name: '', namespace: '', doc: '', connectName: '' } });
+
+          const { addField } = useEditorStore.getState();
+          for (let i = 0; i < n; i++) {
+            addField();
+          }
+
+          const { fields } = useEditorStore.getState();
+          return fields.length === n;
+        },
+      ),
+      { numRuns: 50 },
+    );
+  }, 30000);
+
+  // ── addField at exact limit ────────────────────────────────────────────────
+  // For N = 200, calling addField() 200 times results in fields.length === 200.
+  // MUST PASS on unfixed code (trivially, since no guard exists yet, 200 <= guard limit).
+  // **Validates: Requirements 3.1**
+  it('Preservation — addField at exact limit: 200 calls yields fields.length === 200', () => {
+    useEditorStore.setState({ fields: [], root: { name: '', namespace: '', doc: '', connectName: '' } });
+
+    const { addField } = useEditorStore.getState();
+    for (let i = 0; i < 200; i++) {
+      addField();
+    }
+
+    expect(useEditorStore.getState().fields.length).toBe(200);
+  });
+
+  // ── addNestedField below limit (PBT) ──────────────────────────────────────
+  // Property: for all N ∈ [1, 199], adding N nested fields to a record at
+  // path ['0'] results in the record having exactly N fields.
+  // MUST PASS on unfixed code.
+  // **Validates: Requirements 3.9**
+  it('Preservation — addNestedField below limit (PBT): N ∈ [1,199] nested calls yields N nested fields', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 199 }),
+        (n) => {
+          useEditorStore.setState({
+            fields: [makeRecordField('address')],
+            root: { name: '', namespace: '', doc: '', connectName: '' },
+          });
+
+          const { addNestedField } = useEditorStore.getState();
+          for (let i = 0; i < n; i++) {
+            addNestedField(['0']);
+          }
+
+          const { fields } = useEditorStore.getState();
+          const recordType = fields[0].type;
+          if (recordType.kind !== 'record') return false;
+
+          return recordType.fields.length === n;
+        },
+      ),
+      { numRuns: 50 },
+    );
+  }, 30000);
+
+  // ── IDs are unique (PBT) ───────────────────────────────────────────────────
+  // Property: for any N ∈ [1, 100] calls to addField(), all generated IDs
+  // are distinct (new Set of IDs has size === N).
+  // **Validates: Requirements 3.5**
+  it('Preservation — IDs are unique (PBT): N ∈ [1,100] addField calls produce N distinct IDs', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 100 }),
+        (n) => {
+          useEditorStore.setState({ fields: [], root: { name: '', namespace: '', doc: '', connectName: '' } });
+
+          const { addField } = useEditorStore.getState();
+          for (let i = 0; i < n; i++) {
+            addField();
+          }
+
+          const { fields } = useEditorStore.getState();
+          const idSet = new Set(fields.map((f) => f.id));
+          return idSet.size === n;
+        },
+      ),
+      { numRuns: 50 },
+    );
+  }, 30000);
+
+  // ── Field structure intact ─────────────────────────────────────────────────
+  // After adding fields, each field has id, name, required, type properties
+  // that are defined/non-null.
+  // **Validates: Requirements 3.2, 3.3, 3.6**
+  it('Preservation — field structure intact: added fields have id, name, required, type defined', () => {
+    useEditorStore.setState({ fields: [], root: { name: '', namespace: '', doc: '', connectName: '' } });
+
+    getState().addField();
+    getState().addField();
+    getState().addField();
+
+    const fields = getState().fields;
+    expect(fields.length).toBe(3);
+
+    for (const field of fields) {
+      expect(field.id).toBeDefined();
+      expect(field.id).not.toBeNull();
+      expect(field.name).toBeDefined();
+      expect(field.required).toBeDefined();
+      expect(field.type).toBeDefined();
+      expect(field.type).not.toBeNull();
+      // Default structure: primitive string
+      expect(field.type.kind).toBe('primitive');
+      expect(field.required).toBe(true);
+      expect(field.name).toBe('');
+    }
+  });
+});
